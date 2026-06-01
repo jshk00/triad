@@ -32,8 +32,8 @@ func main() {
 			return triad.Text(w, "admin root", http.StatusOK)
 		})
 	})
-	server := &triad.Server{Address: ":8080"}
-	if err := server.Start(context.Background(), h); err != nil {
+
+	if err := (&triad.Server{Address: ":8080"}).server.Start(context.Background(), h); err != nil {
 		panic(err)
 	}
 }

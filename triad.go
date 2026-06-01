@@ -1,9 +1,13 @@
 package triad
 
 import (
+	"context"
 	"net/http"
+	"os"
+	"os/signal"
 	"reflect"
 	"runtime"
+	"syscall"
 )
 
 // Triad is registry of all registered route
@@ -135,6 +139,12 @@ func (t *Triad) handle(methodType, pattern string, handler HandlerFunc) {
 // ServeHTTP implements [http.Handler]
 func (t *Triad) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.mux.ServeHTTP(w, r)
+}
+
+func (t *Triad) Start(addr string) error {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, os.Interrupt)
+	defer cancel()
+	return (&Server{Address: addr}).Start(ctx, t)
 }
 
 // CompatHandler converts [http.Handler] to [HandlerFunc].
@@ -294,7 +304,7 @@ type (
 	MiddlewareFunc func(next HandlerFunc) HandlerFunc
 )
 
-// Handler implements [htp.Handler] interface with custom
+// Handler implements [http.Handler] interface with custom
 // ErrorHandler and middleware wraping built in.
 type Handler struct {
 	eh HTTPErrorHandler

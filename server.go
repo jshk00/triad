@@ -67,9 +67,7 @@ func (s *Server) Start(ctx context.Context, h http.Handler) error {
 			slog.LevelError,
 		)
 	}
-	if s.Address == "" {
-		s.Address = ":8080"
-	}
+
 	s.srv = &http.Server{
 		Handler:     h,
 		ReadTimeout: s.ReadTimeout,

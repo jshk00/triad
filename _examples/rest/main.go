@@ -29,6 +29,7 @@ func main() {
 	// Mounting Different router
 	r.Group("/admin", AdminRouter)
 
-	server := &triad.Server{}
-	server.Start(context.Background(), r)
+	if err := (&triad.Server{Address: ":8080"}).server.Start(context.Background(), r); err != nil {
+		panic(err)
+	}
 }
