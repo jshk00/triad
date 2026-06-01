@@ -1,0 +1,285 @@
+package triad
+
+import (
+	"net/http"
+)
+
+// Triad is registry of all registered route
+type Triad struct {
+	mux         *http.ServeMux
+	middlewares []MiddlewareFunc
+	prefix      string
+	rexist      bool
+	HTTPErrorHandler
+}
+
+func New() *Triad {
+	return &Triad{
+		mux:              http.NewServeMux(),
+		HTTPErrorHandler: defaultErrHandler,
+	}
+}
+
+// Group creates a new inline router with a copy of all parent middlewares.
+// It's useful for a group of handlers with the same routing path that use
+// additional middleware. This can also be used to mount a subrouter in
+// larger projects.
+func (t *Triad) Group(pattern string, fn func(r *Triad)) *Triad {
+	ir := t.With()
+	ir.prefix = t.prefix + pattern
+	if fn != nil {
+		fn(ir)
+	}
+	return ir
+}
+
+// Use appends a middleware handler to the Mux middleware stack.
+//
+// The middleware stack for any Router will execute before searching for a
+// matching route to a specific handler, which provides opportunity to respond
+// early, change the course of the request execution, or set request-scoped
+// values for the next [HandlerFunc].
+//
+// NOTE: middleware will execute in order they are passed. all middlewares must
+// be registered before routes otherwise router will panic.
+func (t *Triad) Use(mws ...MiddlewareFunc) {
+	if t.rexist {
+		panic("hypr: middlewares must be added before any routes are registered")
+	}
+	t.middlewares = append(t.middlewares, mws...)
+}
+
+// With adds inline middlewares for an endpoint handler.
+// With can be used as group without route so this means
+func (t *Triad) With(middlewares ...MiddlewareFunc) *Triad {
+	mws := make([]MiddlewareFunc, len(t.middlewares))
+	copy(mws, t.middlewares)
+	mws = append(mws, middlewares...)
+	return &Triad{
+		mux:              t.mux,
+		middlewares:      mws,
+		HTTPErrorHandler: t.HTTPErrorHandler,
+	}
+}
+
+func (t *Triad) Get(pattern string, handler HandlerFunc) {
+	t.handle(http.MethodGet, pattern, handler)
+}
+
+func (t *Triad) Head(pattern string, handler HandlerFunc) {
+	t.handle(http.MethodHead, pattern, handler)
+}
+
+func (t *Triad) Post(pattern string, handler HandlerFunc) {
+	t.handle(http.MethodPost, pattern, handler)
+}
+
+func (t *Triad) Put(pattern string, handler HandlerFunc) {
+	t.handle(http.MethodPut, pattern, handler)
+}
+
+func (t *Triad) Patch(pattern string, handler HandlerFunc) {
+	t.handle(http.MethodPatch, pattern, handler)
+}
+
+func (t *Triad) Delete(pattern string, handler HandlerFunc) {
+	t.handle(http.MethodDelete, pattern, handler)
+}
+
+func (t *Triad) Connect(pattern string, handler HandlerFunc) {
+	t.handle(http.MethodConnect, pattern, handler)
+}
+
+func (t *Triad) Options(pattern string, handler HandlerFunc) {
+	t.handle(http.MethodOptions, pattern, handler)
+}
+
+func (t *Triad) Trace(pattern string, handler HandlerFunc) {
+	t.handle(http.MethodTrace, pattern, handler)
+}
+
+// handle creates route path add it in global routes.
+// And register error handler with HandlerFunc.
+func (t *Triad) handle(methodType, pattern string, handler HandlerFunc) {
+	pattern = methodType + " " + t.prefix + pattern
+	t.mux.Handle(pattern, Handler{
+		eh: t.HTTPErrorHandler,
+		fn: chain(t.middlewares, handler),
+	})
+	t.rexist = true
+}
+
+// ServeHTTP implements [http.Handler]
+func (t *Triad) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t.mux.ServeHTTP(w, r)
+}
+
+// CompatHandler converts [http.Handler] to [HandlerFunc].
+func CompatHandler(h http.Handler) HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		h.ServeHTTP(w, r)
+		return nil
+	}
+}
+
+// CompatHandler converts [http.HandlerFunc] to [HandlerFunc].
+func Compat(h http.HandlerFunc) HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		h(w, r)
+		return nil
+	}
+}
+
+// CompatMiddleware converts standard net/http middleware into MiddlewareFunc.
+//
+// Since net/http middleware uses http.Handler and has no error return, this
+// adapter does not propagate errors returned by downstream HandlerFunc if it
+// is the type of http.Handler or http.HandlerFunc.
+func CompatMiddleware(mw func(http.Handler) http.Handler) MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) (err error) {
+			// 1. Wrap next handler to HandlerFunc
+			// 2. Wrap it into original middlware
+			// 3. Call ServeHTTP on original wrapped handler
+			mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				err = next(w, r)
+			})).ServeHTTP(w, r)
+			return err
+		}
+	}
+}
+
+// chain builds a http.Handler composed of an inline middleware
+// stack and endpoint handler in the order they are passed.
+func chain(middlewares []MiddlewareFunc, h HandlerFunc) HandlerFunc {
+	// Return ahead of time if there aren't any middlewares for the chain
+	if len(middlewares) == 0 {
+		return h
+	}
+
+	// Wrap the end handler with the middleware chain
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		h = middlewares[i](h)
+	}
+	return h
+}
+
+const (
+	website = "https://jshk00.github.io/triad"
+	version = "1.0.0"
+	banner  = `
+  _____   ____    ___      _      ____  
+ |_   _| |  _ \  |_ _|    / \    |  _ \ 
+   | |   | |_) |  | |    / _ \   | | | |
+   | |   |  _ <   | |   / ___ \  | |_| |
+   |_|   |_| \_\ |___| /_/   \_\ |____/ 
+`
+)
+
+// Mime Types
+const (
+	charsetUTF8 = "charset=UTF-8"
+	// MIMEApplicationJSON JavaScript Object Notation (JSON) https://www.rfc-editor.org/rfc/rfc8259
+	MIMEApplicationJSON                  = "application/json"
+	MIMEApplicationJavaScript            = "application/javascript"
+	MIMEApplicationJavaScriptCharsetUTF8 = MIMEApplicationJavaScript + "; " + charsetUTF8
+	MIMEApplicationXML                   = "application/xml"
+	MIMEApplicationXMLCharsetUTF8        = MIMEApplicationXML + "; " + charsetUTF8
+	MIMETextXML                          = "text/xml"
+	MIMETextStream                       = "text/event-stream"
+	MIMETextXMLCharsetUTF8               = MIMETextXML + "; " + charsetUTF8
+	MIMEApplicationForm                  = "application/x-www-form-urlencoded"
+	MIMEApplicationProtobuf              = "application/protobuf"
+	MIMEApplicationMsgpack               = "application/msgpack"
+	MIMETextHTML                         = "text/html"
+	MIMETextHTMLCharsetUTF8              = MIMETextHTML + "; " + charsetUTF8
+	MIMETextPlain                        = "text/plain"
+	MIMETextPlainCharsetUTF8             = MIMETextPlain + "; " + charsetUTF8
+	MIMEMultipartForm                    = "multipart/form-data"
+	MIMEOctetStream                      = "application/octet-stream"
+)
+
+// Headers
+const (
+	HeaderAccept         = "Accept"
+	HeaderAcceptEncoding = "Accept-Encoding"
+	// HeaderAllow is the name of the "Allow" header field used to list the set of methods
+	// advertised as supported by the target resource. Returning an Allow header is mandatory
+	// for status 405 (method not found) and useful for the OPTIONS method in responses.
+	// See RFC 7231: https://datatracker.ietf.org/doc/html/rfc7231#section-7.4.1
+	HeaderAllow               = "Allow"
+	HeaderAuthorization       = "Authorization"
+	HeaderContentDisposition  = "Content-Disposition"
+	HeaderContentEncoding     = "Content-Encoding"
+	HeaderContentLength       = "Content-Length"
+	HeaderContentType         = "Content-Type"
+	HeaderCookie              = "Cookie"
+	HeaderSetCookie           = "Set-Cookie"
+	HeaderIfModifiedSince     = "If-Modified-Since"
+	HeaderLastModified        = "Last-Modified"
+	HeaderLocation            = "Location"
+	HeaderRetryAfter          = "Retry-After"
+	HeaderUpgrade             = "Upgrade"
+	HeaderVary                = "Vary"
+	HeaderWWWAuthenticate     = "WWW-Authenticate"
+	HeaderXForwardedFor       = "X-Forwarded-For"
+	HeaderXForwardedProto     = "X-Forwarded-Proto"
+	HeaderXForwardedProtocol  = "X-Forwarded-Protocol"
+	HeaderXForwardedSsl       = "X-Forwarded-Ssl"
+	HeaderXUrlScheme          = "X-Url-Scheme"
+	HeaderXHTTPMethodOverride = "X-HTTP-Method-Override"
+	HeaderXRealIP             = "X-Real-Ip"
+	HeaderXRequestID          = "X-Request-Id"
+	HeaderXCorrelationID      = "X-Correlation-Id"
+	HeaderXRequestedWith      = "X-Requested-With"
+	HeaderServer              = "Server"
+
+	// HeaderOrigin request header indicates the origin (scheme, hostname, and port) that caused the
+	// request. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin
+	HeaderOrigin       = "Origin"
+	HeaderCacheControl = "Cache-Control"
+	HeaderConnection   = "Connection"
+
+	// Access control
+	HeaderAccessControlRequestMethod    = "Access-Control-Request-Method"
+	HeaderAccessControlRequestHeaders   = "Access-Control-Request-Headers"
+	HeaderAccessControlAllowOrigin      = "Access-Control-Allow-Origin"
+	HeaderAccessControlAllowMethods     = "Access-Control-Allow-Methods"
+	HeaderAccessControlAllowHeaders     = "Access-Control-Allow-Headers"
+	HeaderAccessControlAllowCredentials = "Access-Control-Allow-Credentials"
+	HeaderAccessControlExposeHeaders    = "Access-Control-Expose-Headers"
+	HeaderAccessControlMaxAge           = "Access-Control-Max-Age"
+
+	// Security
+	HeaderStrictTransportSecurity         = "Strict-Transport-Security"
+	HeaderXContentTypeOptions             = "X-Content-Type-Options"
+	HeaderXXSSProtection                  = "X-XSS-Protection"
+	HeaderXFrameOptions                   = "X-Frame-Options"
+	HeaderContentSecurityPolicy           = "Content-Security-Policy"
+	HeaderContentSecurityPolicyReportOnly = "Content-Security-Policy-Report-Only"
+	HeaderXCSRFToken                      = "X-CSRF-Token"
+	HeaderReferrerPolicy                  = "Referrer-Policy"
+)
+
+type (
+	// HTTPErrorHandler is a custom function which writes
+	// the error returned from handler to [http.Response].
+	HTTPErrorHandler func(http.ResponseWriter, error)
+	// HandlerFunc is signature type for handler registration.
+	HandlerFunc func(w http.ResponseWriter, r *http.Request) error
+	// MiddlewareFunc is a middleware function signature.
+	MiddlewareFunc func(next HandlerFunc) HandlerFunc
+)
+
+// Handler implements [htp.Handler] interface with custom
+// ErrorHandler and middleware wraping built in.
+type Handler struct {
+	eh HTTPErrorHandler
+	fn HandlerFunc
+}
+
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if err := h.fn(w, r); err != nil {
+		h.eh(w, err)
+	}
+}
