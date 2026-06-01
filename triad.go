@@ -15,21 +15,17 @@ type Triad struct {
 	// RoutesInfo contains information about route like
 	// method type, path, middleware names, handler name.
 	RoutesInfo *Routes
-	// DisableRouteInfo if true stops the information
-	// collection of routes for debugging purpose.
+	// DisableRouteInfo if true stops the information collection
+	// of routes. make false if debugging is required.
 	DisableRouteInfo bool
 	HTTPErrorHandler
 }
 
 func New() *Triad {
-	t := &Triad{
+	return &Triad{
 		mux:              http.NewServeMux(),
 		HTTPErrorHandler: DefaultErrHandler,
 	}
-	if !t.DisableRouteInfo {
-		t.RoutesInfo = NewRoutes()
-	}
-	return t
 }
 
 // Group creates a new inline router with a copy of all parent middlewares.
@@ -114,6 +110,9 @@ func (t *Triad) Trace(pattern string, handler HandlerFunc) {
 // And register error handler with HandlerFunc.
 func (t *Triad) handle(methodType, pattern string, handler HandlerFunc) {
 	if !t.DisableRouteInfo {
+		if t.RoutesInfo == nil {
+			t.RoutesInfo = NewRoutes()
+		}
 		mws := make([]string, 0, len(t.middlewares))
 		for _, mw := range t.middlewares {
 			mws = append(mws, runtime.FuncForPC(reflect.ValueOf(mw).Pointer()).Name())
