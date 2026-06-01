@@ -2,6 +2,8 @@ package triad
 
 import (
 	"net/http"
+	"reflect"
+	"runtime"
 )
 
 // Triad is registry of all registered route
@@ -10,6 +12,12 @@ type Triad struct {
 	middlewares []MiddlewareFunc
 	prefix      string
 	rexist      bool
+	// RoutesInfo contains information about route like
+	// method type, path, middleware names, handler name.
+	RoutesInfo *Routes
+	// DisableRouteInfo if true stops the information
+	// collection of routes for debugging purpose.
+	DisableRouteInfo bool
 	HTTPErrorHandler
 }
 
@@ -101,6 +109,18 @@ func (t *Triad) Trace(pattern string, handler HandlerFunc) {
 // handle creates route path add it in global routes.
 // And register error handler with HandlerFunc.
 func (t *Triad) handle(methodType, pattern string, handler HandlerFunc) {
+	if !t.DisableRouteInfo {
+		mws := make([]string, 0, len(t.middlewares))
+		for _, mw := range t.middlewares {
+			mws = append(mws, runtime.FuncForPC(reflect.ValueOf(mw).Pointer()).Name())
+		}
+		t.RoutesInfo.Add(RouteInfo{
+			Method:     methodType,
+			Pattern:    t.prefix + pattern,
+			Handler:    runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(),
+			Middleware: mws,
+		})
+	}
 	pattern = methodType + " " + t.prefix + pattern
 	t.mux.Handle(pattern, Handler{
 		eh: t.HTTPErrorHandler,
