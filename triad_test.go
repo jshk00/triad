@@ -9,14 +9,14 @@ import (
 )
 
 func TestHypr(t *testing.T) {
-	h := New()
+	r := New()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
-	NotNil(t, h)
-	h.Get("/", func(_ http.ResponseWriter, _ *http.Request) error {
-		return NewHTTPError(http.StatusInternalServerError)
+	NotNil(t, r)
+	r.Get("/", func(_ http.ResponseWriter, _ *http.Request) error {
+		return ErrInternalServerError
 	})
-	h.ServeHTTP(rec, req)
+	r.ServeHTTP(rec, req)
 	Equal(t, http.StatusInternalServerError, rec.Result().StatusCode)
 }
 

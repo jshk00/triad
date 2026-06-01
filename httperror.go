@@ -2,48 +2,63 @@ package triad
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
+)
+
+var (
+	ErrBadRequest                  = &HTTPError{StatusCode: http.StatusBadRequest}            // 400
+	ErrUnauthorized                = &HTTPError{StatusCode: http.StatusUnauthorized}          // 401
+	ErrForbidden                   = &HTTPError{StatusCode: http.StatusForbidden}             // 403
+	ErrNotFound                    = &HTTPError{StatusCode: http.StatusNotFound}              // 404
+	ErrMethodNotAllowed            = &HTTPError{StatusCode: http.StatusMethodNotAllowed}      // 405
+	ErrRequestTimeout              = &HTTPError{StatusCode: http.StatusRequestTimeout}        // 408
+	ErrStatusRequestEntityTooLarge = &HTTPError{StatusCode: http.StatusRequestEntityTooLarge} // 413
+	ErrUnsupportedMediaType        = &HTTPError{StatusCode: http.StatusUnsupportedMediaType}  // 415
+	ErrTooManyRequests             = &HTTPError{StatusCode: http.StatusTooManyRequests}       // 429
+	ErrInternalServerError         = &HTTPError{StatusCode: http.StatusInternalServerError}   // 500
+	ErrBadGateway                  = &HTTPError{StatusCode: http.StatusBadGateway}            // 502
+	ErrServiceUnavailable          = &HTTPError{StatusCode: http.StatusServiceUnavailable}    // 503
 )
 
 // HTTPError represents Default error format for response
 type HTTPError struct {
-	internal   error
-	Msg        string `json:"msg"`
+	err        error
+	Message    string `json:"message"`
 	StatusCode int    `json:"status_code"`
 	hook       func(w http.ResponseWriter)
 }
 
 // NewHTTPError returns instance of HTTPError.
 // If multiple msg provided only first will be used.
-func NewHTTPError(statusCode int, msg ...string) *HTTPError {
-	h := &HTTPError{StatusCode: statusCode}
-	if len(msg) > 0 {
-		h.Msg = msg[0]
-	}
-	return h
+func NewHTTPError(code int, msg string) *HTTPError {
+	return &HTTPError{StatusCode: code, Message: msg}
 }
 
-// SetInternal sets internal error if required
-func (h *HTTPError) SetInternal(err error) *HTTPError {
-	h.internal = err
+// Wrap sets internal error if required
+func (h *HTTPError) Wrap(err error) *HTTPError {
+	h.err = err
 	return h
 }
 
 // Error implements error interface
 func (h *HTTPError) Error() string {
-	if h.internal != nil {
+	if h.Message == "" {
+		h.Message = http.StatusText(h.StatusCode)
+	}
+	if h.err != nil {
 		return fmt.Sprintf(
-			"msg: %s, status_code: %d, internal_error: %s",
-			h.Msg,
+			"message: %s, status_code: %d, error: %s",
+			h.Message,
 			h.StatusCode,
-			h.internal.Error(),
+			h.err.Error(),
 		)
 	}
-	return fmt.Sprintf("msg: %s, status_code: %d", h.Msg, h.StatusCode)
+	return fmt.Sprintf("message: %s, status_code: %d", h.Message, h.StatusCode)
 }
 
 func (h *HTTPError) Unwrap() error {
-	return h.internal
+	return h.err
 }
 
 // WithText sets the error hook with mime plain text.
@@ -53,7 +68,7 @@ func (h *HTTPError) WithText() *HTTPError {
 		w.Header().Set(HeaderXContentTypeOptions, "nosniff")
 		w.Header().Set(HeaderContentType, MIMETextPlain)
 		w.WriteHeader(h.StatusCode)
-		fmt.Fprint(w, h.Msg)
+		fmt.Fprint(w, h.Message)
 	}
 	return h
 }
@@ -93,9 +108,9 @@ func (h *HTTPError) WithHeader(hdrs map[string]string) *HTTPError {
 	return h
 }
 
-// defaultErrHandler is a error handler func
-// to write errors to [http.ResponseWriter]
-func defaultErrHandler(w http.ResponseWriter, err error) {
+// DefaultErrHandler is a error handler func
+// to write errors to [http.ResponseWriter]. by Default Serialize error to json
+func DefaultErrHandler(w http.ResponseWriter, err error) {
 	if e, ok := err.(*HTTPError); ok {
 		if e.hook == nil {
 			e.WithJSON()
@@ -103,5 +118,11 @@ func defaultErrHandler(w http.ResponseWriter, err error) {
 		e.hook(w)
 		return
 	}
-	http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := JSON(
+		w,
+		map[string]string{"msg": err.Error()},
+		http.StatusInternalServerError,
+	); err != nil {
+		slog.Error(err.Error()) // rare case client disconnected
+	}
 }

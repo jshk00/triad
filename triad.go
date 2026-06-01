@@ -22,10 +22,14 @@ type Triad struct {
 }
 
 func New() *Triad {
-	return &Triad{
+	t := &Triad{
 		mux:              http.NewServeMux(),
-		HTTPErrorHandler: defaultErrHandler,
+		HTTPErrorHandler: DefaultErrHandler,
 	}
+	if !t.DisableRouteInfo {
+		t.RoutesInfo = NewRoutes()
+	}
+	return t
 }
 
 // Group creates a new inline router with a copy of all parent middlewares.
