@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
 
@@ -21,7 +20,7 @@ func main() {
 	})
 	// external routing group simulated function of mounted router
 	r.Group("/book", bookRouter)
-	if err := (&triad.Server{Address: ":8080"}).Start(context.Background(), r); err != nil {
+	if err := r.Start(":8080"); err != nil {
 		panic(err)
 	}
 }

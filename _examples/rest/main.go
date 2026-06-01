@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/jshk00/triad"
@@ -29,7 +28,7 @@ func main() {
 	// Mounting Different router
 	r.Group("/admin", AdminRouter)
 
-	if err := (&triad.Server{Address: ":8080"}).server.Start(context.Background(), r); err != nil {
+	if err := r.Start(":8080"); err != nil {
 		panic(err)
 	}
 }

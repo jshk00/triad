@@ -33,7 +33,7 @@ func main() {
 		})
 	})
 
-	if err := (&triad.Server{Address: ":8080"}).server.Start(context.Background(), h); err != nil {
+	if err := r.Start(":8080"); err != nil {
 		panic(err)
 	}
 }
