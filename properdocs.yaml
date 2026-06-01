@@ -1,0 +1,95 @@
+site_name: Triad
+site_url: https://jshk00.github.io/triad
+site_author: Jayesh
+repo_name: jshk00/triad
+repo_url: https://github.com/jshk00/triad
+
+extra:
+  homepage: false
+
+extra_css:
+  - stylesheet/style.css
+
+theme:
+  name: materialx
+  logo: assets/triad.png
+  favicon: assets/triad.png
+
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.path
+    - navigation.prune
+    - toc.follow
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+
+  font:
+    text: Roboto
+    code: JetBrains Mono
+
+  admonition:
+    note:
+      icon: octicons/tag-16
+    abstract:
+      icon: octicons/checklist-16
+    info:
+      icon: octicons/info-16
+    success:
+      icon: octicons/check-16
+    question:
+      icon: octicons/question-16
+    warning:
+      icon: octicons/alert-16
+    failure:
+      icon: octicons/x-circle-16
+    danger:
+      icon: octicons/zap-16
+    bug:
+      icon: octicons/bug-16
+    quote:
+      icon: octicons/quote-16
+
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: lucide/moon
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: cyan
+      accent: cyan
+      toggle:
+        icon: lucide/sun
+        name: Switch to system preference
+
+plugins:
+  - search
+  - glightbox
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - index.md
