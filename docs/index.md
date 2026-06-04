@@ -1,5 +1,5 @@
 ---
-title: introduction
+title: Introduction
 ---
 # 👋 Hi, Lets get started with triad
 

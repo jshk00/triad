@@ -93,3 +93,9 @@ markdown_extensions:
 
 nav:
   - index.md
+  - getting-started.md
+  - routing.md
+  - middlewares.md
+  - error-handling.md
+  - utilities.md
+  - examples.md
