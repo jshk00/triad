@@ -15,12 +15,12 @@ import (
 )
 
 func main() {
-	h := triad.New()
-	h.Use(Logger)
-	h.With(RequestID).Get("/reqID", func(w http.ResponseWriter, r *http.Request) error {
+	r := triad.New()
+	r.Use(Logger)
+	r.With(RequestID).Get("/reqID", func(w http.ResponseWriter, r *http.Request) error {
 		return triad.Text(w, r.Context().Value(ctxReqIDKey).(string), http.StatusOK)
 	})
-	h.Group("/admin", func(h *triad.Triad) {
+	r.Group("/admin", func(h *triad.Triad) {
 		h.Use(
 			RequestID,
 			Auth,

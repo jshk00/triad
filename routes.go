@@ -2,12 +2,10 @@ package triad
 
 import (
 	"strings"
-	"sync"
 )
 
 // Routes contains the registered routes
 type Routes struct {
-	mu     sync.RWMutex
 	index  map[string]int
 	routes []RouteInfo
 }
@@ -24,30 +22,24 @@ func key(mType, pattern string) string {
 
 // Get retrieve single route info if present in registry
 func (rg *Routes) Get(methodType, pattern string) (RouteInfo, bool) {
-	rg.mu.RLock()
 	idx, ok := rg.index[key(methodType, pattern)]
 	var route RouteInfo
 	if ok {
 		route = rg.routes[idx]
 	}
-	rg.mu.RUnlock()
 	return route, ok
 }
 
-// Add the route
-func (rg *Routes) Add(r RouteInfo) {
-	rg.mu.Lock()
+// add the route
+func (rg *Routes) add(r RouteInfo) {
 	rg.index[key(r.Method, r.Pattern)] = len(rg.routes)
 	rg.routes = append(rg.routes, r)
-	rg.mu.Unlock()
 }
 
-// All returns all registered route info in copied slice
+// All returns all registered route info data
 func (rg *Routes) All() []RouteInfo {
-	rg.mu.RLock()
 	routes := make([]RouteInfo, 0, len(rg.routes))
 	routes = append(routes, rg.routes...)
-	rg.mu.RUnlock()
 	return routes
 }
 

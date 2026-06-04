@@ -2,6 +2,7 @@ package triad
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,10 +16,13 @@ type Triad struct {
 	mux         *http.ServeMux
 	middlewares []MiddlewareFunc
 	prefix      string
-	rexist      bool
-	// RoutesInfo contains information about route like
+	// Determines if router is inline
+	inline bool
+	// locks the middleware after route is registered
+	mwlock bool
+	// routes contains information about route like
 	// method type, path, middleware names, handler name.
-	RoutesInfo *Routes
+	routes *Routes
 	// DisableRouteInfo if true stops the information collection
 	// of routes. make false if debugging is required.
 	DisableRouteInfo bool
@@ -29,20 +33,8 @@ func New() *Triad {
 	return &Triad{
 		mux:              http.NewServeMux(),
 		HTTPErrorHandler: DefaultErrHandler,
+		routes:           NewRoutes(),
 	}
-}
-
-// Group creates a new inline router with a copy of all parent middlewares.
-// It's useful for a group of handlers with the same routing path that use
-// additional middleware. This can also be used to mount a subrouter in
-// larger projects.
-func (t *Triad) Group(pattern string, fn func(r *Triad)) *Triad {
-	ir := t.With()
-	ir.prefix = t.prefix + pattern
-	if fn != nil {
-		fn(ir)
-	}
-	return ir
 }
 
 // Use appends a middleware handler to the Mux middleware stack.
@@ -55,15 +47,31 @@ func (t *Triad) Group(pattern string, fn func(r *Triad)) *Triad {
 // NOTE: middleware will execute in order they are passed. all middlewares must
 // be registered before routes otherwise router will panic.
 func (t *Triad) Use(mws ...MiddlewareFunc) {
-	if t.rexist {
-		panic("hypr: middlewares must be added before any routes are registered")
+	if t.mwlock {
+		panic("triad: middlewares must be added before any routes are registered")
 	}
 	t.middlewares = append(t.middlewares, mws...)
+}
+
+// Group creates a new inline router with a copy of all parent middlewares.
+// It's useful for a group of handlers with the same routing path that use
+// additional middleware. This can also be used to mount a subrouter in
+// larger projects.
+func (t *Triad) Group(pattern string, fn func(g *Triad)) *Triad {
+	ir := t.With()
+	ir.prefix = t.prefix + pattern
+	if fn != nil {
+		fn(ir)
+	}
+	return ir
 }
 
 // With adds inline middlewares for an endpoint handler.
 // With can be used as group without route so this means
 func (t *Triad) With(middlewares ...MiddlewareFunc) *Triad {
+	if !t.inline && !t.mwlock {
+		t.mwlock = true
+	}
 	mws := make([]MiddlewareFunc, len(t.middlewares))
 	copy(mws, t.middlewares)
 	mws = append(mws, middlewares...)
@@ -71,6 +79,10 @@ func (t *Triad) With(middlewares ...MiddlewareFunc) *Triad {
 		mux:              t.mux,
 		middlewares:      mws,
 		HTTPErrorHandler: t.HTTPErrorHandler,
+		DisableRouteInfo: t.DisableRouteInfo,
+		routes:           t.routes,
+		prefix:           t.prefix,
+		inline:           true,
 	}
 }
 
@@ -111,17 +123,15 @@ func (t *Triad) Trace(pattern string, handler HandlerFunc) {
 }
 
 // handle creates route path add it in global routes.
-// And register error handler with HandlerFunc.
+// And handle error handler with HandlerFunc.
 func (t *Triad) handle(methodType, pattern string, handler HandlerFunc) {
+	t.mwlock = true
 	if !t.DisableRouteInfo {
-		if t.RoutesInfo == nil {
-			t.RoutesInfo = NewRoutes()
-		}
 		mws := make([]string, 0, len(t.middlewares))
 		for _, mw := range t.middlewares {
 			mws = append(mws, runtime.FuncForPC(reflect.ValueOf(mw).Pointer()).Name())
 		}
-		t.RoutesInfo.Add(RouteInfo{
+		t.routes.add(RouteInfo{
 			Method:     methodType,
 			Pattern:    t.prefix + pattern,
 			Handler:    runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(),
@@ -133,7 +143,12 @@ func (t *Triad) handle(methodType, pattern string, handler HandlerFunc) {
 		eh: t.HTTPErrorHandler,
 		fn: chain(t.middlewares, handler),
 	})
-	t.rexist = true
+}
+
+// RouteInfo return routes information such as middleware
+// call chain, handler name, http method, pattern
+func (t *Triad) RouteInfo() *Routes {
+	return t.routes
 }
 
 // ServeHTTP implements [http.Handler]
@@ -142,9 +157,16 @@ func (t *Triad) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Triad) Start(addr string) error {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, os.Interrupt)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	return (&Server{Address: addr}).Start(ctx, t)
+	srv := &Server{Address: addr}
+	go func() {
+		<-ctx.Done()
+		if err := srv.Shutdown(ctx); err != nil {
+			slog.Error(err.Error())
+		}
+	}()
+	return srv.Start(ctx, t)
 }
 
 // CompatHandler converts [http.Handler] to [HandlerFunc].
@@ -201,11 +223,11 @@ const (
 	website = "https://jshk00.github.io/triad"
 	version = "1.0.0"
 	banner  = `
-  _____   ____    ___      _      ____  
- |_   _| |  _ \  |_ _|    / \    |  _ \ 
+  _____   ____    ___      _      ____
+ |_   _| |  _ \  |_ _|    / \    |  _ \
    | |   | |_) |  | |    / _ \   | | | |
    | |   |  _ <   | |   / ___ \  | |_| |
-   |_|   |_| \_\ |___| /_/   \_\ |____/ 
+   |_|   |_| \_\ |___| /_/   \_\ |____/
 `
 )
 
