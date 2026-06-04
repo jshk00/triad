@@ -121,7 +121,7 @@ func (t *Triad) handle(methodType, pattern string, handler HandlerFunc) {
 		for _, mw := range t.middlewares {
 			mws = append(mws, runtime.FuncForPC(reflect.ValueOf(mw).Pointer()).Name())
 		}
-		t.RoutesInfo.Add(RouteInfo{
+		t.RoutesInfo.add(RouteInfo{
 			Method:     methodType,
 			Pattern:    t.prefix + pattern,
 			Handler:    runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(),
