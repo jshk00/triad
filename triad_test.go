@@ -219,7 +219,7 @@ func TestRoutes(t *testing.T) {
 			tt.setup(h)
 			rec := httptest.NewRecorder()
 			h.ServeHTTP(rec, tt.req)
-			_, ok := h.RoutesInfo.Get(tt.req.Method, tt.pattern)
+			_, ok := h.routes.Get(tt.req.Method, tt.pattern)
 			Equal(t, true, ok)
 			Equal(t, tt.status, rec.Result().StatusCode)
 			Equal(t, "OK", rec.Body.String())

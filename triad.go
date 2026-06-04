@@ -57,7 +57,7 @@ func (t *Triad) Use(mws ...MiddlewareFunc) {
 // It's useful for a group of handlers with the same routing path that use
 // additional middleware. This can also be used to mount a subrouter in
 // larger projects.
-func (t *Triad) Group(pattern string, fn func(r *Triad)) *Triad {
+func (t *Triad) Group(pattern string, fn func(g *Triad)) *Triad {
 	ir := t.With()
 	ir.prefix = t.prefix + pattern
 	if fn != nil {

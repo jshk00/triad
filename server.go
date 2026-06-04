@@ -104,7 +104,7 @@ func (s *Server) Start(ctx context.Context, h http.Handler) error {
 			fmt.Println("-------------------------------------------------")
 			fmt.Println("ROUTES")
 			fmt.Println("-------------------------------------------------")
-			for _, r := range h.RoutesInfo.All() {
+			for _, r := range h.routes.All() {
 				fmt.Println(r.String())
 			}
 			fmt.Println("-------------------------------------------------")
