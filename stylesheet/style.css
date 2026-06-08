@@ -1,0 +1,30 @@
+.md-sidebar--primary .md-sidebar__scrollwrap::before {
+  content: "";
+  display: block;
+  width: 220px;
+  height: 100px;
+  background-image: url("../assets/triad.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.md-grid {
+  max-width: 85%;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 300 !important;
+}
+
+p,
+li,
+ul,
+ol {
+  line-height: 1.6;
+}
