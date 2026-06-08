@@ -28,4 +28,4 @@ jobs:
           restore-keys: |
             mkdocs-materialx-
       - run: pip install mkdocs-materialx mkdocs-git-revision-date-localized-plugin mkdocs-glightbox properdocs
-      - run: mkdocs gh-deploy --force
+      - run: properdocs gh-deploy --force
