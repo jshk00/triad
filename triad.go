@@ -45,7 +45,8 @@ func New() *Triad {
 // values for the next [HandlerFunc].
 //
 // NOTE: middleware will execute in order they are passed. all middlewares must
-// be registered before routes otherwise router will panic.
+// be registered before routes. The additional middlewar can be registered using
+// With and Group handlers.
 func (t *Triad) Use(mws ...MiddlewareFunc) {
 	if t.mwlock {
 		panic("triad: middlewares must be added before any routes are registered")
@@ -86,45 +87,52 @@ func (t *Triad) With(middlewares ...MiddlewareFunc) *Triad {
 	}
 }
 
-func (t *Triad) Get(pattern string, handler HandlerFunc) {
-	t.handle(http.MethodGet, pattern, handler)
+func (t *Triad) Get(pattern string, h HandlerFunc) {
+	t.handle(http.MethodGet, pattern, h)
 }
 
-func (t *Triad) Head(pattern string, handler HandlerFunc) {
-	t.handle(http.MethodHead, pattern, handler)
+func (t *Triad) Head(pattern string, h HandlerFunc) {
+	t.handle(http.MethodHead, pattern, h)
 }
 
-func (t *Triad) Post(pattern string, handler HandlerFunc) {
-	t.handle(http.MethodPost, pattern, handler)
+func (t *Triad) Post(pattern string, h HandlerFunc) {
+	t.handle(http.MethodPost, pattern, h)
 }
 
-func (t *Triad) Put(pattern string, handler HandlerFunc) {
-	t.handle(http.MethodPut, pattern, handler)
+func (t *Triad) Put(pattern string, h HandlerFunc) {
+	t.handle(http.MethodPut, pattern, h)
 }
 
-func (t *Triad) Patch(pattern string, handler HandlerFunc) {
-	t.handle(http.MethodPatch, pattern, handler)
+func (t *Triad) Patch(pattern string, h HandlerFunc) {
+	t.handle(http.MethodPatch, pattern, h)
 }
 
-func (t *Triad) Delete(pattern string, handler HandlerFunc) {
-	t.handle(http.MethodDelete, pattern, handler)
+func (t *Triad) Delete(pattern string, h HandlerFunc) {
+	t.handle(http.MethodDelete, pattern, h)
 }
 
-func (t *Triad) Connect(pattern string, handler HandlerFunc) {
-	t.handle(http.MethodConnect, pattern, handler)
+func (t *Triad) Connect(pattern string, h HandlerFunc) {
+	t.handle(http.MethodConnect, pattern, h)
 }
 
-func (t *Triad) Options(pattern string, handler HandlerFunc) {
-	t.handle(http.MethodOptions, pattern, handler)
+func (t *Triad) Options(pattern string, h HandlerFunc) {
+	t.handle(http.MethodOptions, pattern, h)
 }
 
-func (t *Triad) Trace(pattern string, handler HandlerFunc) {
-	t.handle(http.MethodTrace, pattern, handler)
+func (t *Triad) Trace(pattern string, h HandlerFunc) {
+	t.handle(http.MethodTrace, pattern, h)
+}
+
+func (t *Triad) Method(method, pattern string, h HandlerFunc) {
+	if method == "" {
+		panic("triad: method must not be empty")
+	}
+	t.handle(method, pattern, h)
 }
 
 // handle creates route path add it in global routes.
 // And handle error handler with HandlerFunc.
-func (t *Triad) handle(methodType, pattern string, handler HandlerFunc) {
+func (t *Triad) handle(method, pattern string, h HandlerFunc) {
 	t.mwlock = true
 	if !t.DisableRouteInfo {
 		mws := make([]string, 0, len(t.middlewares))
@@ -132,16 +140,16 @@ func (t *Triad) handle(methodType, pattern string, handler HandlerFunc) {
 			mws = append(mws, runtime.FuncForPC(reflect.ValueOf(mw).Pointer()).Name())
 		}
 		t.routes.add(RouteInfo{
-			Method:     methodType,
+			Method:     method,
 			Pattern:    t.prefix + pattern,
-			Handler:    runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(),
+			Handler:    runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name(),
 			Middleware: mws,
 		})
 	}
-	pattern = methodType + " " + t.prefix + pattern
+	pattern = method + " " + t.prefix + pattern
 	t.mux.Handle(pattern, Handler{
 		eh: t.HTTPErrorHandler,
-		fn: chain(t.middlewares, handler),
+		fn: chain(t.middlewares, h),
 	})
 }
 

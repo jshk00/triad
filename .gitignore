@@ -20,3 +20,6 @@ coverage.html
 
 # neovim files
 *.vim
+
+# python virtual env
+env

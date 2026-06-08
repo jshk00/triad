@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestHypr(t *testing.T) {
+func TestTriad(t *testing.T) {
 	r := New()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()

@@ -13,16 +13,14 @@ import (
 )
 
 var (
-	ErrStreamingClosed   = errors.New("[hypr] sse streaming channel closed")
-	ErrClientGone        = errors.New("[hypr] client is disconnected")
+	ErrStreamingClosed   = errors.New("traid: sse streaming channel closed")
+	ErrClientGone        = errors.New("triad: client is disconnected")
 	ErrUnsupportedStream = errors.New(
-		"[hypr] sse streaming is not supported by http respose writer",
+		"triad: sse streaming is not supported by http respose writer",
 	)
 )
 
 // Binds the json to given body
-// NOTE: optimize the jsondecoder performance using this post -->
-// https://dave.cheney.net/paste/gophercon-sg-2023.html
 func Bind(r *http.Request, body any) error {
 	return json.NewDecoder(r.Body).Decode(body)
 }
@@ -183,19 +181,35 @@ var decoders = map[reflect.Type]func(s string) (any, error){
 }
 
 // RegisterDecoder adds user defined decoder for query and path params.
-// WARN: This is not a concurrent safe. Recommended to register
-// all the custom decoders before accessing [ParseParam] function.
+// WARN: RegisterDecoder is not concurrency-safe. Register all custom
+// decoders during application initialization before using [PathValue]
+// or [QueryValue].
 func RegisterDecoder(typ reflect.Type, fn func(s string) (any, error)) {
 	decoders[typ] = fn
 }
 
-// ParsrParam parses parameter using [reflect.Type]
-func ParseParam[T any](r *http.Request, key string) (T, error) {
+// PathValue parses path param for given generic type
+func PathValue[T any](r *http.Request, key string) (T, error) {
+	return parse[T](r.PathValue, key)
+}
+
+// QueryValue parses query param for given generic type
+func QueryValue[T any](r *http.Request, key string) (T, error) {
+	return parse[T](r.URL.Query().Get, key)
+}
+
+// parse parses parameter using [reflect.Type]
+func parse[T any](fn func(string) string, key string) (T, error) {
 	var zero T
 	if strings.TrimSpace(key) == "" {
 		return zero, errors.New("invalid empty key")
 	}
-	s := r.PathValue(key)
+
+	s := fn(key)
+	if s == "" {
+		return zero, fmt.Errorf("%s key is not found", key)
+	}
+
 	typ := reflect.TypeFor[T]()
 	dec, ok := decoders[typ]
 	if !ok {
