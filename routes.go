@@ -1,6 +1,7 @@
 package triad
 
 import (
+	"iter"
 	"strings"
 )
 
@@ -36,11 +37,14 @@ func (rg *Routes) add(r RouteInfo) {
 	rg.routes = append(rg.routes, r)
 }
 
-// All returns all registered route info data
-func (rg *Routes) All() []RouteInfo {
-	routes := make([]RouteInfo, 0, len(rg.routes))
-	routes = append(routes, rg.routes...)
-	return routes
+func (rg *Routes) Iter() iter.Seq[RouteInfo] {
+	return func(yield func(RouteInfo) bool) {
+		for _, r := range rg.routes {
+			if !yield(r) {
+				return
+			}
+		}
+	}
 }
 
 // RouteInfo contains information of registered route.
