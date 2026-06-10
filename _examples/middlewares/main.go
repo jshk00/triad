@@ -45,7 +45,7 @@ func Logger(next triad.HandlerFunc) triad.HandlerFunc {
 		err := next(rw, r)
 		if err != nil {
 			if he, ok := errors.AsType[*triad.HTTPError](err); ok {
-				rw.code = he.StatusCode
+				rw.code = he.Code
 			}
 		}
 		end := time.Since(start)
@@ -100,8 +100,7 @@ func AdminOnly(next triad.HandlerFunc) triad.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		isAdmin, ok := r.Context().Value("acl.admin").(bool)
 		if !ok || !isAdmin {
-			return triad.NewHTTPError(http.StatusForbidden, http.StatusText(http.StatusForbidden)).
-				WithText()
+			return triad.ErrForbidden
 		}
 		return next(w, r)
 	}

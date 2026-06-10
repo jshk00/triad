@@ -27,7 +27,7 @@ theme:
     - content.code.copy
 
   font:
-    text: Roboto
+    text: Inter
     code: JetBrains Mono
 
   admonition:
@@ -95,7 +95,8 @@ nav:
   - index.md
   - getting-started.md
   - routing.md
-  - middlewares.md
   - error-handling.md
+  - middlewares.md
+  - start-server.md
   - utilities.md
   - examples.md

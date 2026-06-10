@@ -29,7 +29,12 @@ func Bind(r *http.Request, body any) error {
 func JSON(w http.ResponseWriter, body any, status int) error {
 	w.Header().Set(HeaderContentType, MIMEApplicationJSON)
 	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(body)
+	b, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	w.Write(b)
+	return nil
 }
 
 // XML writes xml response

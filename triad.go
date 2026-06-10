@@ -26,15 +26,18 @@ type Triad struct {
 	// DisableRouteInfo if true stops the information collection
 	// of routes. make false if debugging is required.
 	DisableRouteInfo bool
+	Logger           *slog.Logger
 	HTTPErrorHandler
 }
 
 func New() *Triad {
-	return &Triad{
-		mux:              http.NewServeMux(),
-		HTTPErrorHandler: DefaultErrHandler,
-		routes:           NewRoutes(),
+	t := &Triad{
+		mux:    http.NewServeMux(),
+		routes: NewRoutes(),
+		Logger: slog.Default(),
 	}
+	t.HTTPErrorHandler = DefaultErrHandler(false, t.Logger)
+	return t
 }
 
 // Use appends a middleware handler to the Mux middleware stack.
@@ -327,7 +330,7 @@ const (
 type (
 	// HTTPErrorHandler is a custom function which writes
 	// the error returned from handler to [http.Response].
-	HTTPErrorHandler func(http.ResponseWriter, error)
+	HTTPErrorHandler func(http.ResponseWriter, *http.Request, error)
 	// HandlerFunc is signature type for handler registration.
 	HandlerFunc func(w http.ResponseWriter, r *http.Request) error
 	// MiddlewareFunc is a middleware function signature.
@@ -343,6 +346,6 @@ type Handler struct {
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := h.fn(w, r); err != nil {
-		h.eh(w, err)
+		h.eh(w, r, err)
 	}
 }
