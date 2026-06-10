@@ -23,9 +23,9 @@ var (
 
 // HTTPError represents Default error format for response
 type HTTPError struct {
-	err        error
 	Message    string `json:"message"`
-	StatusCode int    `json:"status_code"`
+	StatusCode int    `json:"-"`
+	err        error
 	hook       func(w http.ResponseWriter)
 }
 
@@ -37,75 +37,95 @@ func NewHTTPError(code int, msg string) *HTTPError {
 
 // Wrap sets internal error if required
 func (h *HTTPError) Wrap(err error) *HTTPError {
-	h.err = err
-	return h
+	return &HTTPError{
+		Message:    h.Message,
+		err:        err,
+		StatusCode: h.StatusCode,
+		hook:       h.hook,
+	}
 }
 
 // Error implements error interface
 func (h *HTTPError) Error() string {
-	if h.Message == "" {
-		h.Message = http.StatusText(h.StatusCode)
+	msg := h.Message
+	if msg == "" {
+		msg = http.StatusText(h.StatusCode)
 	}
 	if h.err != nil {
 		return fmt.Sprintf(
 			"message: %s, status_code: %d, error: %s",
-			h.Message,
+			msg,
 			h.StatusCode,
 			h.err.Error(),
 		)
 	}
-	return fmt.Sprintf("message: %s, status_code: %d", h.Message, h.StatusCode)
+	return fmt.Sprintf("message: %s, status_code: %d", msg, h.StatusCode)
 }
 
 func (h *HTTPError) Unwrap() error {
 	return h.err
 }
 
-// WithText sets the error hook with mime plain text.
-func (h *HTTPError) WithText() *HTTPError {
-	h.hook = func(w http.ResponseWriter) {
-		w.Header().Del(HeaderContentType)
-		w.Header().Set(HeaderXContentTypeOptions, "nosniff")
-		w.Header().Set(HeaderContentType, MIMETextPlain)
-		w.WriteHeader(h.StatusCode)
-		fmt.Fprint(w, h.Message)
+// Text sets the error hook with mime plain text.
+func (h *HTTPError) Text() *HTTPError {
+	e := &HTTPError{
+		Message:    h.Message,
+		StatusCode: h.StatusCode,
+		err:        h.err,
 	}
-	return h
+	e.hook = func(w http.ResponseWriter) {
+		http.Error(w, e.Message, e.StatusCode)
+	}
+	return e
 }
 
-// WithJSON sets the error hook with mime json.
+// JSON sets the error hook with mime json.
 // This is the default hook if none is set.
-// Both msg and status_code will be sent in payload.
-func (h *HTTPError) WithJSON() *HTTPError {
-	h.hook = func(w http.ResponseWriter) {
-		if err := JSON(w, h, h.StatusCode); err != nil {
+func (h *HTTPError) JSON() *HTTPError {
+	e := &HTTPError{
+		Message:    h.Message,
+		StatusCode: h.StatusCode,
+		err:        h.err,
+	}
+	e.hook = func(w http.ResponseWriter) {
+		if err := JSON(w, e, e.StatusCode); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-	return h
+	return e
 }
 
-// WithJSON sets the error hook with mime json.
-func (h *HTTPError) WithXML() *HTTPError {
-	h.hook = func(w http.ResponseWriter) {
-		if err := XML(w, h, h.StatusCode); err != nil {
+// XML sets the error hook with mime xml.
+func (h *HTTPError) XML() *HTTPError {
+	e := &HTTPError{
+		Message:    h.Message,
+		StatusCode: h.StatusCode,
+		err:        h.err,
+	}
+	e.hook = func(w http.ResponseWriter) {
+		if err := XML(w, e, e.StatusCode); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-	return h
+	return e
 }
 
-// WithHeader sets hook with given key and val headers.
+// Header sets hook with given key and val headers.
 // Useful if you don't want to display any message but still
 // want to send custom header and status code.
-func (h *HTTPError) WithHeader(hdrs map[string]string) *HTTPError {
-	h.hook = func(w http.ResponseWriter) {
+func (h *HTTPError) Header(hdrs map[string]string) *HTTPError {
+	e := &HTTPError{
+		Message:    h.Message,
+		StatusCode: h.StatusCode,
+		err:        h.err,
+	}
+	e.hook = func(w http.ResponseWriter) {
 		for k, v := range hdrs {
 			w.Header().Set(k, v)
 		}
-		w.WriteHeader(h.StatusCode)
+		w.WriteHeader(e.StatusCode)
 	}
-	return h
+	return e
 }
 
 // DefaultErrHandler is a error handler func
@@ -113,14 +133,14 @@ func (h *HTTPError) WithHeader(hdrs map[string]string) *HTTPError {
 func DefaultErrHandler(w http.ResponseWriter, err error) {
 	if e, ok := err.(*HTTPError); ok {
 		if e.hook == nil {
-			e.WithJSON()
+			e = e.JSON()
 		}
 		e.hook(w)
 		return
 	}
 	if err := JSON(
 		w,
-		map[string]string{"msg": err.Error()},
+		map[string]string{"message": err.Error()},
 		http.StatusInternalServerError,
 	); err != nil {
 		slog.Error(err.Error()) // rare case client disconnected
