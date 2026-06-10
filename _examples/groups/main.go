@@ -33,7 +33,7 @@ func bookRouter(r *triad.Triad) {
 		}
 	})
 	r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) error {
-		id, err := triad.ParseParam[int](r, "id")
+		id, err := triad.PathValue[int](r, "id")
 		if err != nil {
 			return err
 		}

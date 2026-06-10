@@ -25,19 +25,19 @@ func (a *ArticleHandler) List(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (a *ArticleHandler) Get(w http.ResponseWriter, r *http.Request) error {
-	id, err := triad.ParseParam[int](r, "id")
+	id, err := triad.PathValue[int](r, "id")
 	if err != nil {
 		return triad.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	article := a.db.Get(id)
 	if article == nil {
-		return triad.NewHTTPError(http.StatusNotFound)
+		return triad.ErrNotFound
 	}
 	return triad.JSON(w, article, http.StatusOK)
 }
 
 func (a *ArticleHandler) Delete(w http.ResponseWriter, r *http.Request) error {
-	id, err := triad.ParseParam[int](r, "id")
+	id, err := triad.PathValue[int](r, "id")
 	if err != nil {
 		return triad.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -69,8 +69,7 @@ func AdminOnly(next triad.HandlerFunc) triad.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		isAdmin, ok := r.Context().Value("acl.admin").(bool)
 		if !ok || !isAdmin {
-			return triad.NewHTTPError(http.StatusForbidden, http.StatusText(http.StatusForbidden)).
-				WithText()
+			return triad.ErrForbidden
 		}
 		return next(w, r)
 	}
