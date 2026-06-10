@@ -28,3 +28,9 @@ ul,
 ol {
   line-height: 1.6;
 }
+
+.md-typeset pre,
+.md-typeset .highlight {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
