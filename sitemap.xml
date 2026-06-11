@@ -2,42 +2,42 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
         <loc>https://jshk00.github.io/triad/</loc>
-        <lastmod>2026-06-10</lastmod>
+        <lastmod>2026-06-11</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
         <loc>https://jshk00.github.io/triad/error-handling/</loc>
-        <lastmod>2026-06-10</lastmod>
+        <lastmod>2026-06-11</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
         <loc>https://jshk00.github.io/triad/examples/</loc>
-        <lastmod>2026-06-10</lastmod>
+        <lastmod>2026-06-11</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
         <loc>https://jshk00.github.io/triad/getting-started/</loc>
-        <lastmod>2026-06-10</lastmod>
+        <lastmod>2026-06-11</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
         <loc>https://jshk00.github.io/triad/middlewares/</loc>
-        <lastmod>2026-06-10</lastmod>
+        <lastmod>2026-06-11</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
         <loc>https://jshk00.github.io/triad/routing/</loc>
-        <lastmod>2026-06-10</lastmod>
+        <lastmod>2026-06-11</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
         <loc>https://jshk00.github.io/triad/start-server/</loc>
-        <lastmod>2026-06-10</lastmod>
+        <lastmod>2026-06-11</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
         <loc>https://jshk00.github.io/triad/utilities/</loc>
-        <lastmod>2026-06-10</lastmod>
+        <lastmod>2026-06-11</lastmod>
         <changefreq>daily</changefreq>
     </url>
 </urlset>
