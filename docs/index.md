@@ -9,7 +9,7 @@ The key considerations of triad's design are: project structure, maintainability
 
 # Features
 
-- Lightweight - cloc'd in ~1000 LOC for the chi router
+- Lightweight - cloc'd in ~500 LOC for the Triad router
 - Fast - yes, see benchmarks
 - 100% compatible with net/http - use any http or middleware pkg in the ecosystem that is also compatible with net/http
 - Designed for modular/composable APIs - middlewares, inline middlewares, external and internal Groups for mounting
