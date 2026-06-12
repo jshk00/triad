@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -158,11 +161,64 @@ func SSE(w http.ResponseWriter, r *http.Request, ch <-chan io.WriterTo) error {
 	}
 }
 
-// File sends file response from commly supported file types
-// [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/MIME_types/Common_types)
-// For unknow filetype octet-stream is sent
-// TODO: filetype logic
-func File() {}
+// File streams a file to the client.
+//
+// The Content-Type is inferred from the file extension.
+// If the MIME type cannot be determined,
+// application/octet-stream is used.
+func File(w http.ResponseWriter, fpath string) error {
+	return file(w, fpath, false)
+}
+
+// Download streams a file to the client as an attachment.
+func Download(w http.ResponseWriter, fpath string) error {
+	return file(w, fpath, true)
+}
+
+func file(w http.ResponseWriter, fpath string, attach bool) error {
+	f, err := os.Open(fpath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		return err
+	}
+
+	var mimeTyp string
+	if typ := mime.TypeByExtension(filepath.Ext(fpath)); typ != "" {
+		mimeTyp = typ
+	} else {
+		// fallback approach using detect content
+		// as *os.File implements io.Seeker
+		buf := make([]byte, 512)
+		n, err := f.Read(buf)
+		if err != nil && err != io.EOF {
+			return err
+		}
+		mimeTyp = http.DetectContentType(buf[:n])
+		if _, err := f.Seek(0, io.SeekStart); err != nil {
+			return err
+		}
+	}
+
+	if attach {
+		w.Header().
+			Set(HeaderContentDisposition, `attachment; filename="`+filepath.Base(fpath)+`"`)
+	}
+	return Stream(w, f, info.Size(), mimeTyp)
+}
+
+func Stream(w http.ResponseWriter, r io.Reader, size int64, contentType string) error {
+	w.Header().Set(HeaderContentType, contentType)
+	if size >= 0 {
+		w.Header().Set(HeaderContentLength, strconv.FormatInt(size, 10))
+	}
+	_, err := io.Copy(w, r)
+	return err
+}
 
 var decoders = map[reflect.Type]func(s string) (any, error){
 	reflect.TypeFor[bool](): func(s string) (a any, err error) {
