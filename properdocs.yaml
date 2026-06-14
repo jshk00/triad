@@ -58,15 +58,15 @@ theme:
       primary: blue
       accent: light blue
       toggle:
-        icon: lucide/moon
+        icon: lucide/sun
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: cyan
       accent: cyan
       toggle:
-        icon: lucide/sun
-        name: Switch to system preference
+        icon: lucide/moon
+        name: Switch to light mode
 
 plugins:
   - search
