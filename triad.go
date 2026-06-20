@@ -34,7 +34,7 @@ func New() *Triad {
 	t := &Triad{
 		mux:    http.NewServeMux(),
 		routes: NewRoutes(),
-		Logger: slog.Default(),
+		Logger: slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})),
 	}
 	t.HTTPErrorHandler = DefaultErrHandler(false, t.Logger)
 	return t
@@ -174,7 +174,7 @@ func (t *Triad) Start(addr string) error {
 	go func() {
 		<-ctx.Done()
 		if err := srv.Shutdown(ctx); err != nil {
-			slog.Error(err.Error())
+			t.Logger.Error(err.Error())
 		}
 	}()
 	return srv.Start(ctx, t)
@@ -233,13 +233,6 @@ func chain(middlewares []MiddlewareFunc, h HandlerFunc) HandlerFunc {
 const (
 	website = "https://jshk00.github.io/triad"
 	version = "1.0.0"
-	banner  = `
-  _____   ____    ___      _      ____
- |_   _| |  _ \  |_ _|    / \    |  _ \
-   | |   | |_) |  | |    / _ \   | | | |
-   | |   |  _ <   | |   / ___ \  | |_| |
-   |_|   |_| \_\ |___| /_/   \_\ |____/
-`
 )
 
 // Mime Types

@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"log"
 	"log/slog"
 	"net"
@@ -21,6 +20,7 @@ type Server struct {
 	OnShutdown     func()
 	Address        string
 	ErrorLog       *log.Logger
+	Logger         *slog.Logger
 	Listener       net.Listener
 	TLSConfig      *tls.Config
 	ListnerNetwork string
@@ -67,6 +67,9 @@ func (s *Server) Start(ctx context.Context, h http.Handler) error {
 			slog.LevelError,
 		)
 	}
+	if s.Logger == nil {
+		s.Logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
+	}
 
 	s.srv = &http.Server{
 		Handler:     h,
@@ -92,28 +95,29 @@ func (s *Server) Start(ctx context.Context, h http.Handler) error {
 	}
 
 	if !s.HideBanner {
-		fmt.Print(banner)
-		fmt.Println()
-		fmt.Printf("website: %s\n", website)
-		fmt.Printf("version: %s\n", version)
-		fmt.Println()
+		s.Logger.Info(
+			"traid router",
+			slog.String("version", version),
+			slog.String("website", website),
+		)
 	}
 
 	if !s.HideRoutePrint {
 		if h, ok := (h).(*Triad); ok {
-			fmt.Println("-------------------------------------------------")
-			fmt.Println("ROUTES")
-			fmt.Println("-------------------------------------------------")
 			for r := range h.routes.Iter() {
-				fmt.Println(r.String())
+				s.Logger.Info(
+					"route",
+					slog.String("pattern", r.Pattern),
+					slog.String("method", r.Method),
+					slog.String("handler", r.Handler),
+					slog.Any("middleware", r.Middleware),
+				)
 			}
-			fmt.Println("-------------------------------------------------")
-			fmt.Println()
 		}
 	}
 
 	if !s.HidePort {
-		slog.Info("server started successfully", slog.String("address", s.srv.Addr))
+		s.Logger.Info("server started successfully", slog.String("address", s.srv.Addr))
 	}
 
 	if err := s.srv.Serve(s.Listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
