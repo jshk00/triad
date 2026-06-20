@@ -13,6 +13,7 @@
 # Output of the go coverage tool
 *.out
 *.cov
+test-output.txt
 coverage.html
 
 # env file
