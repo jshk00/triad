@@ -76,7 +76,7 @@ func (h *HTTPError) Unwrap() error {
 
 // DefaultErrHandler is a error handler func
 // to write errors to [http.ResponseWriter]. by Default Serialize error to json
-func DefaultErrHandler(showError bool, logger *slog.Logger) HTTPErrorHandler {
+func DefaultErrHandler(exposeError bool, logger *slog.Logger) HTTPErrorHandler {
 	return func(w http.ResponseWriter, r *http.Request, err error) {
 		code := http.StatusInternalServerError
 		var sc StatusCoder
@@ -95,23 +95,18 @@ func DefaultErrHandler(showError bool, logger *slog.Logger) HTTPErrorHandler {
 				text = http.StatusText(code)
 			}
 			msg := map[string]string{"message": text}
-			if showError {
+			if exposeError {
 				if e := m.Unwrap(); e != nil {
 					msg["error"] = e.Error()
 				}
 			}
 			result = msg
 		default:
-			var jm json.Marshaler
-			if errors.As(err, &jm) {
-				result = jm
-			} else {
-				msg := map[string]any{"message": http.StatusText(code)}
-				if showError {
-					msg["error"] = err.Error()
-				}
-				result = msg
+			msg := map[string]any{"message": http.StatusText(code)}
+			if exposeError {
+				msg["error"] = err.Error()
 			}
+			result = msg
 		}
 		if r.Method == http.MethodHead {
 			w.WriteHeader(code)

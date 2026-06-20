@@ -163,15 +163,21 @@ func SSE(w http.ResponseWriter, r *http.Request, ch <-chan io.WriterTo) error {
 
 // File streams a file to the client.
 //
-// The Content-Type is inferred from the file extension.
+// The Content-Type is inferred from the file
+// extension or first 512 byte reading as fallback.
 // If the MIME type cannot be determined,
 // application/octet-stream is used.
 func File(w http.ResponseWriter, fpath string) error {
 	return file(w, fpath, false)
 }
 
-// Download streams a file to the client as an attachment.
-func Download(w http.ResponseWriter, fpath string) error {
+// Attachment streams a file to the client as an attachment.
+//
+// The Content-Type is inferred from the file
+// extension or first 512 byte reading as fallback.
+// If the MIME type cannot be determined,
+// application/octet-stream is used.
+func Attachment(w http.ResponseWriter, fpath string) error {
 	return file(w, fpath, true)
 }
 

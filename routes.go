@@ -2,7 +2,6 @@ package triad
 
 import (
 	"iter"
-	"strings"
 )
 
 // Routes contains the registered routes
@@ -22,8 +21,8 @@ func key(mType, pattern string) string {
 }
 
 // Get retrieve single route info if present in registry
-func (rg *Routes) Get(methodType, pattern string) (RouteInfo, bool) {
-	idx, ok := rg.index[key(methodType, pattern)]
+func (rg *Routes) Get(method, pattern string) (RouteInfo, bool) {
+	idx, ok := rg.index[key(method, pattern)]
 	var route RouteInfo
 	if ok {
 		route = rg.routes[idx]
@@ -56,16 +55,5 @@ type RouteInfo struct {
 }
 
 func (r RouteInfo) String() string {
-	var sb strings.Builder
-	defer sb.Reset()
-	sb.WriteString(r.Method)
-	sb.WriteString(" ")
-	sb.WriteString(r.Pattern)
-	sb.WriteString(" ")
-	for _, m := range r.Middleware {
-		sb.WriteString(m)
-		sb.WriteString("-->")
-	}
-	sb.WriteString(r.Handler)
-	return sb.String()
+	return r.Method + " " + r.Pattern
 }
