@@ -789,12 +789,14 @@
 <p>Middleware performs some specific function on the HTTP request or response at a specific stage in the HTTP pipeline before or after the user defined controller.
 Middleware is a design pattern to eloquently add cross cutting concerns like logging, handling authentication without having many code contact points.</p>
 </div>
-<p>Typical middleware use cases:
-- Authentication
-- Metrics Collections
-- Rate Limiting
-- Request/Response Modification
-- Tracing and Observability</p>
+<p>Typical middleware use cases:</p>
+<ul>
+<li>Authentication</li>
+<li>Metrics Collections</li>
+<li>Rate Limiting</li>
+<li>Request/Response Modification</li>
+<li>Tracing and Observability</li>
+</ul>
 <p>In triad middleware has signature <code>func(next triad.HandlerFunc) triad.HandlerFunc</code> internally expands to <code>func(next  func(http.ResponseWriter, *Request) error) func(http.ResponseWriter, *Request) error</code>. Triad middleware are fully compatible with <code>net/http</code> ecosystem. Any middleware implemented as <code>func(next http.Handler) http.Handler</code> can be used through compatibility layer. The main difference is <code>triad's</code> middleware participates in error propagation model. If any handler or middleware returns an error, Triad automatically invokes the configured error handler.</p>
 <h2 id="creating-middleware">Creating middleware</h2>
 <p>The example below stores a user ID in the request context and makes it available to downstream handlers.</p>
