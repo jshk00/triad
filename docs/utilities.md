@@ -184,7 +184,7 @@ func main() {
 
 `File` streams a file to the client without loading the entire file into memory.
 
-`Download` streams a file to the client as an attachment.
+`Attachment` streams a file to the client as an attachment.
 
 ```go
 func main() {
@@ -196,7 +196,7 @@ func main() {
         return triad.File(w, r, "sample.pdf")
     })
     r.Get("/download", func(w http.ResponseWriter, r *http.Request) error {
-        return triad.Download(w, r, "movie-12.mkv")
+        return triad.Attachment(w, r, "movie-12.mkv")
     })
 }
 ```
