@@ -7,6 +7,7 @@ title: Middleware
     Middleware is a design pattern to eloquently add cross cutting concerns like logging, handling authentication without having many code contact points.
 
 Typical middleware use cases:
+
 - Authentication
 - Metrics Collections
 - Rate Limiting
