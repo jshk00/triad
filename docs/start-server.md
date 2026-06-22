@@ -80,7 +80,8 @@ func main() {
 	}
 }
 ```
-Following is equivalent to previous example using `http.Server` 
+
+Following is equivalent to previous example using `http.Server`.
 ```go
 func main() {
     r := triad.New()
@@ -98,4 +99,4 @@ func main() {
       log.Fatal(err)
     }
 }
-``
+```
