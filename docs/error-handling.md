@@ -22,7 +22,35 @@ r.Use(func(next triad.HandlerFunc) triad.HandlerFunc {
   }
 })
 ```
-You can also use `triad.NewHTTPError()` without a message, in that case status text is used as an error message. For example, "Unauthorized".
+
+You can also use `StatusErrors` which implements `triad.StatusCoder` interface.
+```go
+r := triad.New()
+r.Get("/notfound", func(w http.ResponseWrite, r *http.Request) error {
+    return triad.ErrNotFound // send 404 with messahe Not Found
+})
+
+// if exposedError true the wrapped error is also get displayed
+r.Get("/notfound", func(w http.ResponseWrite, r *http.Request) error {
+    return triad.ErrNotFound.Wrap(errors.New("db: user id not found"))
+})
+```
+
+Following are available `StatusError` by default.
+```go
+ErrBadRequest                  // 400
+ErrUnauthorized                // 401
+ErrForbidden                   // 403
+ErrNotFound                    // 404
+ErrMethodNotAllowed            // 405
+ErrRequestTimeout              // 408
+ErrStatusRequestEntityTooLarge // 413
+ErrUnsupportedMediaType        // 415
+ErrTooManyRequests             // 429
+ErrInternalServerError         // 500
+ErrBadGateway                  // 502
+ErrServiceUnavailable          // 503
+```
 
 ## Default HTTP Error Handler
 Triad provide default HTTP error handler which sends response in a JSON format.
@@ -31,7 +59,13 @@ Triad provide default HTTP error handler which sends response in a JSON format.
     "message": "error connecting to redis"
 }
 ```
-For a standard error, response is sent as 500 - Internal Server Error; however, if you wraped the error with original error, original error message will be sent. 
+For a standard error, response is sent as 500 - Internal Server Error; however, if you the error with original error and  `exposedError` parameter is set to true in `DefaultErrHandler`, original error will be sent along with message.
+```json
+{
+    "message": "file provided is not found",
+    "error": "os: error opening file"
+}
+```
 
 ## Custom HTTP Error Handler 
 Custom HTTP error handler can be set via `r.HTTPErrorHandle`.
