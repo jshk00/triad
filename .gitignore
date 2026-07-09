@@ -18,9 +18,10 @@ coverage.html
 
 # env file
 .env
-
 # neovim files
 *.vim
 
 # python virtual env
 env
+site/
+.cache

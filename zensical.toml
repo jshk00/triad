@@ -1,0 +1,98 @@
+site_name = "Triad"
+site_url = "https://jshk00.github.io/triad"
+site_author = "Jayesh"
+repo_name = "jshk00/triad"
+repo_url = "https://github.com/jshk00/triad"
+extra_css = ["stylesheet/style.css"]
+
+nav = [
+	"index.md",
+	"getting-started.md",
+	"routing.md",
+	"error-handling.md",
+	"middlewares.md",
+	"start-server.md",
+	"utilities.md",
+	{ "Examples" = "https://github.com/jshk00/triad/tree/main/_examples" },
+]
+
+[markdown_extensions]
+attr_list = {}
+admonition = {}
+def_list = {}
+md_in_html = {}
+tables = {}
+zensical.extensions.glightbox = {}
+
+[markdown_extensions.toc]
+permalink = true
+slugify.object = "pymdownx.slugs.slugify"
+slugify.kwds = { case = "lower" }
+
+[markdown_extensions.pymdownx]
+details = {}
+caret = {}
+mark = {}
+tilde = {}
+blocks.caption = {}
+inlinehilite = {}
+superfences = {}
+keys = {}
+emoji.emoji_index = "zensical.extensions.emoji.twemoji"
+emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
+
+# highlight
+highlight.anchor_linenums = true
+highlight.linenums_style = "pymdownx-inline"
+highlight.line_spans = "__span"
+highlight.pygments_lang_class = true
+
+# snippet
+snippets.base_path = "codes"
+
+# tabbed
+tabbed.alternate_style = true
+tabbed.slugify.object = "pymdownx.slugs.slugify"
+
+[theme.icon.admonition]
+note = "octicons/tag-16"
+abstract = "octicons/checklist-16"
+info = "octicons/info-16"
+success = "octicons/check-16"
+question = "octicons/question-16"
+warning = "octicons/alert-16"
+failure = "octicons/x-circle-16"
+danger = "octicons/zap-16"
+bug = "octicons/bug-16"
+quote = "octicons/quote-16"
+
+[theme]
+icon.logo = "lucide/rocket"
+favicon = "assets/triad.png"
+
+font.text = "Geist"
+font.code = "JetBrains Mono"
+features = [
+	"navigation.instant",
+	"navigation.instant.progress",
+	"navigation.tracking",
+	# "navigation.tabs",
+	"navigation.path",
+	"navigation.prune",
+	"toc.follow",
+	"navigation.top",
+	"search.highlight",
+	"content.code.copy",
+]
+
+[[theme.palette]]
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+accent = "cyan"
+
+[[theme.palette]]
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+accent = "cyan"

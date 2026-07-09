@@ -9,6 +9,23 @@
   background-size: contain;
 }
 
+label.md-nav__title {
+  display: none !important;
+}
+
+p,
+li,
+ul,
+ol,
+pre,
+code {
+  font-size: 0.8rem;
+}
+
+div.admonition p {
+  font-size: 0.7rem;
+}
+
 h1,
 h2,
 h3,
