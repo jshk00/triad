@@ -13,6 +13,17 @@ label.md-nav__title {
   display: none !important;
 }
 
+:root {
+  --default-text-color: black;
+}
+
+[data-md-color-scheme="default"] .md-typeset p,
+[data-md-color-scheme="default"] .md-typeset ul,
+[data-md-color-scheme="default"] .md-typeset ol,
+[data-md-color-scheme="default"] .md-typeset li {
+  color: var(--default-text-color);
+}
+
 p,
 li,
 ul,
@@ -40,6 +51,10 @@ li,
 ul,
 ol {
   line-height: 1.6;
+}
+
+ul.md-nav__list li {
+  font-size: 0.7rem;
 }
 
 .md-typeset pre,
